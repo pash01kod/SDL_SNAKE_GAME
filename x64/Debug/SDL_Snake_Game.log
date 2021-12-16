@@ -1,6 +1,0 @@
-﻿  main.cpp
-  snake.cpp
-C:\Users\Pavlo\source\repos\SDL_Snake_Game\SDL_Snake_Game\snake.cpp(157,40): warning C4244: '=': conversion from 'const int' to 'float', possible loss of data
-C:\Users\Pavlo\source\repos\SDL_Snake_Game\SDL_Snake_Game\snake.cpp(171,36): warning C4244: '=': conversion from 'const int' to 'float', possible loss of data
-  Generating Code...
-  SDL_Snake_Game.vcxproj -> C:\Users\Pavlo\source\repos\SDL_Snake_Game\x64\Debug\SDL_Snake_Game.exe

@@ -1,18 +1,11 @@
-#include "snake.h"
-#include <iostream>
-#include <stdexcept>
+#include "Game.h"
 
 int main(int argc, char** argv)
 {
-	try {
-		Snake s;
+	Game s;
 
-		return s.exec();
-	}
-	catch (std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-		return 1;
-	}
+	s.run();
+
+	return 1;
 	
 }

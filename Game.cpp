@@ -1,37 +1,53 @@
-#include "snake.h"
-#include "check.h"
+#include "Game.h"
 
-Snake::Snake()
+Game::Game()
 {
     auto res = SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_CHECK(res == 0, "SDL_Init");
+
+    if (res == NULL)
+    {
+        printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+    }
+
     SDL_CreateWindowAndRenderer(Width, Height, SDL_WINDOW_BORDERLESS, &window, &renderer);
-    SDL_CHECK(window, "SDL_CreateWindowAndRenderer");
-    SDL_CHECK(renderer, "SDL_CreateWindowAndRenderer");
+
+    if (window == NULL)
+    {
+        printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
+     
+    }
+    if (renderer == NULL)
+    {
+        printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+
+    }
+
     SDL_SetWindowPosition(window, 65, 126);
+
     auto surface = SDL_LoadBMP("sprites.bmp");
-    SDL_CHECK(surface, "SDL_LoadBMP(\"sprites.bmp\")");
+
     sprites = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_CHECK(sprites, "SDL_CreateTextureFromSurface");
+
     SDL_FreeSurface(surface);
 
     segmentsList.push_back(std::make_pair(5, 5));
     segmentsList.push_back(std::make_pair(5, 6));
     segmentsList.push_back(std::make_pair(4, 6));
+
     generateFruit();
 }
 
-void Snake::generateFruit()
+void Game::generateFruit()
 {
     auto done = false;
     do
     {
-        fruitX = rand() % (Width / 64);
-        fruitY = rand() % (Height / 64);
+        f.fruitX = rand() % (Width / 64);
+        f.fruitY = rand() % (Height / 64);
         done = true;
         for (const auto& segment : segmentsList)
         {
-            if (fruitX == segment.first && fruitY == segment.second)
+            if (f.fruitX == segment.first && f.fruitY == segment.second)
             {
                 done = false;
                 break;
@@ -40,15 +56,14 @@ void Snake::generateFruit()
     } while (!done);
 }
 
-
-Snake::~Snake()
+Game::~Game()
 {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
 
-int Snake::exec()
+int Game::run()
 {
     auto oldTick = SDL_GetTicks();
     for (auto done = false; !done;)
@@ -63,20 +78,20 @@ int Snake::exec()
                 switch (e.key.keysym.sym)
                 {
                 case SDLK_UP:
-                    dx = 0;
-                    dy = -1;
+                    s.dx = 0;
+                    s.dy = -1;
                     break;
                 case SDLK_RIGHT:
-                    dx = 1;
-                    dy = 0;
+                    s.dx = 1;
+                    s.dy = 0;
                     break;
                 case SDLK_DOWN:
-                    dx = 0;
-                    dy = 1;
+                    s.dx = 0;
+                    s.dy = 1;
                     break;
                 case SDLK_LEFT:
-                    dx = -1;
-                    dy = 0;
+                    s.dx = -1;
+                    s.dy = 0;
                     break;
                 }
             }
@@ -99,13 +114,13 @@ int Snake::exec()
     return 0;
 }
 
-bool Snake::tick()
+bool Game::tick()
 {
     if (ticks++ % 250 == 0)
     {
         auto p = segmentsList.front();
-        p.first += dx;
-        p.second += dy;
+        p.first += s.dx;
+        p.second += s.dy;
         if (p.first < 0 || p.first >= Width / 64 ||
             p.second < 0 || p.second >= Height / 64)
             return false;
@@ -113,7 +128,7 @@ bool Snake::tick()
             if (p == segment)
                 return false;
         segmentsList.push_front(p);
-        if (p.first != fruitX || p.second != fruitY)
+        if (p.first != f.fruitX || p.second != f.fruitY)
             segmentsList.pop_back();
         else
             generateFruit();
@@ -121,32 +136,37 @@ bool Snake::tick()
     return true;
 }
 
-void Snake::draw()
+void Game::draw()
 {
     SDL_Rect src;
+
     src.x = 0;
     src.y = 0;
     src.w = 64;
     src.h = 64;
+
     SDL_Rect dest;
+
     dest.w = 64;
     dest.h = 64;
+
     int ds[][3] = {
       { -1, 0, 0 },
       { 0, -1, 90 },
       { 1, 0, 180 },
       { 0, 1, -90 },
     };
+
     for (auto iter = std::begin(segmentsList); iter != std::end(segmentsList); ++iter)
     {
-        float direction = 0;
+        auto direction = 0;
         const auto& segment = *iter;
         if (iter == std::begin(segmentsList))
         {
-            if (iter->first + dx == fruitX && iter->second + dy == fruitY)
-                src.x = HeadOpenMouth * 64;
+            if (iter->first + s.dx == f.fruitX && iter->second + s.dy == f.fruitY)
+                src.x = s.HeadOpenMouth * 64;
             else
-                src.x = Head * 64;
+                src.x = s.Head * 64;
             if (iter + 1 != std::end(segmentsList))
             {
                 const auto& nextSegment = *(iter + 1);
@@ -162,7 +182,7 @@ void Snake::draw()
         }
         else if (iter + 1 == std::end(segmentsList))
         {
-            src.x = Tail * 64;
+            src.x = s.Tail * 64;
             const auto& prevSegment = *(iter - 1);
             for (const auto& d : ds)
             {
@@ -177,19 +197,20 @@ void Snake::draw()
         {
             const auto& nextSegment = *(iter + 1);
             const auto& prevSegment = *(iter - 1);
+
             if (nextSegment.first == prevSegment.first)
             {
-                src.x = Straight * 64;
+                src.x = s.Straight * 64;
                 direction = 90;
             }
             else if (nextSegment.second == prevSegment.second)
             {
-                src.x = Straight * 64;
+                src.x = s.Straight * 64;
                 direction = 0;
             }
             else
             {
-                src.x = Turn * 64;
+                src.x = s.Turn * 64;
                 bool up = false;
                 if (segment.first == nextSegment.first && segment.second - 1 == nextSegment.second)
                     up = true;
@@ -223,10 +244,12 @@ void Snake::draw()
 
         dest.x = 64 * segment.first;
         dest.y = 64 * segment.second;
+
         SDL_RenderCopyEx(renderer, sprites, &src, &dest, direction, nullptr, SDL_FLIP_NONE);
     }
-    src.x = Fruit * 64;
-    dest.x = fruitX * 64;
-    dest.y = fruitY * 64;
+    src.x = s.Fruit * 64;
+    dest.x = f.fruitX * 64;
+    dest.y = f.fruitY * 64;
+
     SDL_RenderCopyEx(renderer, sprites, &src, &dest, 0, nullptr, SDL_FLIP_NONE);
 }
